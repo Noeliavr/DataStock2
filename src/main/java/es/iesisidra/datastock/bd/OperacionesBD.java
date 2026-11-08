@@ -8,9 +8,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.sql.Types;
+import java.sql.CallableStatement;
 
 import es.iesisidra.datastock.config.ConexionBD;
 import es.iesisidra.datastock.modelo.Categoria;
+import es.iesisidra.datastock.modelo.MovimientoStock;
 import es.iesisidra.datastock.modelo.Producto;
 import es.iesisidra.datastock.modelo.ProductoDetalle;
 import es.iesisidra.datastock.modelo.Proveedor;
@@ -314,5 +316,131 @@ public class OperacionesBD {
             }
         }
         return lista;
+    }
+     // Llama al procedimiento almacenado. Él hace la transacción (UPDATE + INSERT).
+    public static void registrarMovimiento(String codigo, String tipo, int cantidad) throws SQLException {
+        try (Connection con = ConexionBD.getConexion();
+             CallableStatement cs = con.prepareCall("{call registrar_movimiento(?, ?, ?)}")) {
+            cs.setString(1, codigo);
+            cs.setString(2, tipo);
+            cs.setInt(3, cantidad);
+            cs.execute();
+        }
+    }
+
+    private static final String SELECT_MOVIMIENTO =
+            "SELECT id, producto_codigo, tipo, cantidad, fecha, stock_anterior, stock_posterior "
+            + "FROM movimiento_stock ";
+
+    // Convierte la fila actual del ResultSet en un MovimientoStock
+    private static MovimientoStock leerMovimiento(ResultSet rs) throws SQLException {
+        return new MovimientoStock(
+                rs.getLong("id"),
+                rs.getString("producto_codigo"),
+                MovimientoStock.TipoMovimiento.valueOf(rs.getString("tipo")),
+                rs.getInt("cantidad"),
+                rs.getTimestamp("fecha").toLocalDateTime(),
+                rs.getInt("stock_anterior"),
+                rs.getInt("stock_posterior"));
+    }
+
+    // Último movimiento de un producto (o null si no tiene)
+    public static MovimientoStock ultimoMovimiento(String codigo) throws SQLException {
+        String sql = SELECT_MOVIMIENTO + "WHERE producto_codigo = ? ORDER BY id DESC LIMIT 1";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, codigo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return leerMovimiento(rs);
+                }
+                return null;
+            }
+        }
+    }
+
+    public static ArrayList<MovimientoStock> listarMovimientos() throws SQLException {
+        ArrayList<MovimientoStock> lista = new ArrayList<MovimientoStock>();
+        String sql = SELECT_MOVIMIENTO + "ORDER BY fecha, id";
+        try (Connection con = ConexionBD.getConexion();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                lista.add(leerMovimiento(rs));
+            }
+        }
+        return lista;
+    }
+
+    public static ArrayList<MovimientoStock> listarMovimientosDe(String codigo) throws SQLException {
+        ArrayList<MovimientoStock> lista = new ArrayList<MovimientoStock>();
+        String sql = SELECT_MOVIMIENTO + "WHERE producto_codigo = ? ORDER BY fecha, id";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, codigo);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(leerMovimiento(rs));
+                }
+            }
+        }
+        return lista;
+    }
+    // Inserta todos los productos. Si falla uno, rollback: no se guarda NINGUNO.
+    // forzarError = true repite el primer producto al final para provocar
+    // un error de clave duplicada (solo para la prueba CP-JDBC-18).
+    public static void insertarLote(ArrayList<Producto> productos, boolean forzarError) throws SQLException {
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(INSERT_PRODUCTO)) {
+
+            con.setAutoCommit(false); // empieza la transacción
+            try {
+                for (Producto p : productos) {
+                    prepararInsert(ps, p);
+                    ps.executeUpdate();
+                }
+                if (forzarError) {
+                    prepararInsert(ps, productos.get(0));
+                    ps.executeUpdate(); // aquí salta la SQLException (código duplicado)
+                }
+                con.commit(); // todo bien: se guardan
+            } catch (SQLException e) {
+                con.rollback(); // algo falló: se deshace todo el lote
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+    // Primer id de categoría libre a partir de "desde"
+    public static int primerIdCategoriaLibre(int desde) throws SQLException {
+        int id = desde;
+        while (buscarCategoria(id) != null) {
+            id++;
+        }
+        return id;
+    }
+
+    // Inserta varias categorías en UNA transacción: o se guardan todas o ninguna
+    public static void insertarCategoriasEnTransaccion(ArrayList<Categoria> categorias) throws SQLException {
+        String sql = "INSERT INTO categoria (id, nombre) VALUES (?, ?)";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            con.setAutoCommit(false);
+            try {
+                for (Categoria c : categorias) {
+                    ps.setInt(1, c.getId());
+                    ps.setString(2, c.getNombre());
+                    ps.executeUpdate();
+                }
+                con.commit();
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
     }
 }

@@ -2,10 +2,12 @@ package es.iesisidra.datastock;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import es.iesisidra.datastock.bd.OperacionesBD;
 import es.iesisidra.datastock.modelo.Categoria;
+import es.iesisidra.datastock.modelo.MovimientoStock;
 import es.iesisidra.datastock.modelo.Producto;
 import es.iesisidra.datastock.modelo.ProductoDetalle;
 import es.iesisidra.datastock.modelo.Proveedor;
@@ -51,6 +53,18 @@ public class MenuMySQL {
                     break;
                 case 5:
                     menuConsultas();
+                    break;
+                case 6:
+                    menuMovimientos();
+                    break;
+                case 7:
+                    menuHistorial();
+                    break;
+                case 8:
+                    importarDesdeMemoria();
+                    break;
+                case 9:
+                    demoTransacciones();
                     break;
                 case 0:
                     break;
@@ -866,6 +880,302 @@ public class MenuMySQL {
         }
         try {
             mostrarLista(OperacionesBD.stockInferior(umbral));
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+     static void menuMovimientos() {
+        int opcion;
+        do {
+            System.out.println();
+            System.out.println("------------- MENÚ DE MOVIMIENTOS -------------");
+            System.out.println("1. Registrar una ENTRADA de stock");
+            System.out.println("2. Registrar una SALIDA de stock");
+            System.out.println("0. Volver al menú MySQL");
+            opcion = App.leerNumero("Selecciona una opción: ");
+
+            switch (opcion) {
+                case 1:
+                    registrarMovimiento("ENTRADA");
+                    break;
+                case 2:
+                    registrarMovimiento("SALIDA");
+                    break;
+                case 0:
+                    break;
+                default:
+                    Colores.error("Opción no válida.");
+                    break;
+            }
+        } while (opcion != 0);
+    }
+
+    static void registrarMovimiento(String tipo) {
+        System.out.println("===== REGISTRAR " + tipo + " =====");
+        String codigo = App.leerTexto("Código del producto: ").trim().toUpperCase();
+        try {
+            ProductoDetalle p = OperacionesBD.buscarProducto(codigo);
+            if (p == null) {
+                Colores.error("No existe ningún producto con el código " + codigo + ".");
+                return;
+            }
+            System.out.println("Producto: " + p.getNombre() + " | Stock actual: " + p.getStock());
+
+            int cantidad = App.leerNumero("Cantidad: ");
+            if (cantidad <= 0) {
+                Colores.error("La cantidad debe ser un número entero mayor que 0.");
+                return;
+            }
+            if (!confirmar("¿Registrar " + tipo + " de " + cantidad + " unidades de " + codigo + "?")) {
+                Colores.aviso("Operación cancelada. No se ha modificado nada.");
+                return;
+            }
+
+            try {
+                // El procedimiento hace el UPDATE del stock y el INSERT del movimiento
+                OperacionesBD.registrarMovimiento(codigo, tipo, cantidad);
+            } catch (SQLException e) {
+                Colores.error(explicarError(e) + " El stock permanece en " + p.getStock() + ".");
+                return;
+            }
+
+            MovimientoStock m = OperacionesBD.ultimoMovimiento(codigo);
+            Colores.ok("Movimiento registrado correctamente.");
+            System.out.println("Movimiento: " + m.getTipo() + ", cantidad " + m.getCantidad());
+            System.out.println("Resultado: stock anterior " + m.getStockAnterior()
+                    + " -> posterior " + m.getStockPosterior());
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+     static void menuHistorial() {
+        int opcion;
+        do {
+            System.out.println();
+            System.out.println("------------- MENÚ DE HISTORIAL -------------");
+            System.out.println("1. Consultar todos los movimientos");
+            System.out.println("2. Consultar movimientos de un producto");
+            System.out.println("0. Volver al menú MySQL");
+            opcion = App.leerNumero("Selecciona una opción: ");
+
+            switch (opcion) {
+                case 1:
+                    historialCompleto();
+                    break;
+                case 2:
+                    historialProducto();
+                    break;
+                case 0:
+                    break;
+                default:
+                    Colores.error("Opción no válida.");
+                    break;
+            }
+        } while (opcion != 0);
+    }
+
+    static void mostrarMovimientos(ArrayList<MovimientoStock> lista) {
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        System.out.println("ID | FECHA Y HORA        | PRODUCTO | TIPO    | CANT. | ANTERIOR -> POSTERIOR");
+        System.out.println("--------------------------------------------------------------------------");
+        for (MovimientoStock m : lista) {
+            System.out.println(m.getId() + " | " + m.getFecha().format(formato) + " | "
+                    + m.getProductoCodigo() + " | " + m.getTipo() + " | " + m.getCantidad() + " | "
+                    + m.getStockAnterior() + " -> " + m.getStockPosterior());
+        }
+        System.out.println("Total de movimientos: " + lista.size());
+    }
+
+    static void historialCompleto() {
+        System.out.println("===== HISTORIAL DE MOVIMIENTOS =====");
+        try {
+            ArrayList<MovimientoStock> lista = OperacionesBD.listarMovimientos();
+            if (lista.isEmpty()) {
+                Colores.aviso("Sin movimientos registrados.");
+            } else {
+                mostrarMovimientos(lista);
+            }
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void historialProducto() {
+        System.out.println("===== HISTORIAL DE UN PRODUCTO =====");
+        String codigo = App.leerTexto("Código del producto: ").trim().toUpperCase();
+        try {
+            if (OperacionesBD.buscarProducto(codigo) == null) {
+                Colores.error("No existe ningún producto con el código " + codigo + ".");
+                return;
+            }
+            ArrayList<MovimientoStock> lista = OperacionesBD.listarMovimientosDe(codigo);
+            if (lista.isEmpty()) {
+                Colores.aviso("El producto " + codigo + " existe, pero no tiene movimientos registrados.");
+            } else {
+                mostrarMovimientos(lista);
+            }
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+    static String validarProducto(Producto p) {
+        String error = validarCodigo(p.getCodigo());
+        if (error == null) {
+            error = validarNombreProducto(p.getNombre());
+        }
+        if (error == null) {
+            error = validarPrecio(p.getPrecio());
+        }
+        if (error == null && p.getStock() < 0) {
+            error = "El stock no puede ser negativo.";
+        }
+        if (error == null && (p.getCategoriaId() <= 0 || p.getProveedorId() <= 0)) {
+            error = "Los ID de categoría y proveedor deben ser positivos.";
+        }
+        return error;
+    }
+
+    static void importarDesdeMemoria() {
+        System.out.println("===== IMPORTAR PRODUCTOS DE MEMORIA A MYSQL =====");
+        int total = App.inventario.size();
+        System.out.println("Productos disponibles en memoria: " + total);
+        if (total == 0) {
+            Colores.aviso("No hay productos para importar. Importa antes un JSON o XML (opciones 2 y 3).");
+            return;
+        }
+        if (!confirmar("¿Deseas importar estos productos a MySQL?")) {
+            Colores.aviso("Operación cancelada.");
+            return;
+        }
+        boolean forzarError = confirmar("¿Activar la PRUEBA DE ROLLBACK (provoca un error SQL al final del lote)? Normalmente: N");
+
+        ArrayList<Producto> aceptados = new ArrayList<Producto>();
+        int omitidos = 0;
+        int rechazados = 0;
+
+        // 1) Comprobar cada producto (no se inserta nada todavía)
+        System.out.println("Iniciando comprobación de productos...");
+        try {
+            for (Producto p : App.ordenarPorCodigo(App.inventario)) {
+                System.out.println();
+                System.out.println("Comprobando " + p.getCodigo() + " - " + p.getNombre() + "...");
+
+                String error = validarProducto(p);
+                if (error != null) {
+                    Colores.error(error + " El producto no se puede importar.");
+                    rechazados++;
+                } else if (OperacionesBD.buscarProducto(p.getCodigo()) != null) {
+                    Colores.aviso("El producto ya existe en MySQL. Se omite.");
+                    omitidos++;
+                } else if (OperacionesBD.buscarCategoria(p.getCategoriaId()) == null) {
+                    Colores.error("No existe la categoría con ID " + p.getCategoriaId() + ". El producto no se puede importar.");
+                    rechazados++;
+                } else if (OperacionesBD.buscarProveedor(p.getProveedorId()) == null) {
+                    Colores.error("No existe el proveedor con ID " + p.getProveedorId() + ". El producto no se puede importar.");
+                    rechazados++;
+                } else {
+                    Colores.ok("Producto válido para importar.");
+                    aceptados.add(p);
+                }
+            }
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+            Colores.error("Importación cancelada. No se ha insertado ningún producto.");
+            return;
+        }
+
+        // 2) Insertar los aceptados en UNA transacción
+        int insertados = 0;
+        boolean hayRollback = false;
+        if (!aceptados.isEmpty()) {
+            try {
+                OperacionesBD.insertarLote(aceptados, forzarError);
+                insertados = aceptados.size();
+            } catch (SQLException e) {
+                hayRollback = true;
+                Colores.error("Error SQL durante el lote: " + explicarError(e));
+                Colores.error("Se ha ejecutado ROLLBACK: no se ha confirmado ninguna inserción del lote.");
+            }
+        }
+
+        // 3) Resumen
+        System.out.println();
+        System.out.println("------------------------------------------------");
+        System.out.println("RESULTADO DE LA IMPORTACIÓN");
+        System.out.println("------------------------------------------------");
+        System.out.println("Productos analizados:               " + total);
+        System.out.println("Productos insertados:               " + insertados);
+        System.out.println("Omitidos por código duplicado:      " + omitidos);
+        System.out.println("Rechazados por datos incorrectos:   " + rechazados);
+        if (hayRollback) {
+            System.out.println("Deshechos por rollback:             " + aceptados.size());
+            Colores.error("Importación NO confirmada (rollback).");
+        } else {
+            Colores.ok("Importación finalizada. El inventario en memoria no se ha modificado.");
+        }
+    }
+    static void demoTransacciones() {
+        System.out.println("===== DEMOSTRACIÓN DE TRANSACCIONES JDBC =====");
+        try {
+            // IDs altos y libres para no tocar datos reales
+            int id1 = OperacionesBD.primerIdCategoriaLibre(9001);
+            int id2 = OperacionesBD.primerIdCategoriaLibre(id1 + 1);
+            int id3 = OperacionesBD.primerIdCategoriaLibre(id2 + 1);
+
+            System.out.println("Se usarán categorías de prueba con IDs libres: " + id1 + ", " + id2 + " y " + id3);
+            System.out.println("Escenario A (commit): insertar " + id1 + " y " + id2 + " en una transacción.");
+            System.out.println("Escenario B (rollback): insertar " + id3 + " y repetir el ID " + id1
+                    + " (error de clave duplicada).");
+            if (!confirmar("¿Comenzar la demostración?")) {
+                Colores.aviso("Demostración cancelada.");
+                return;
+            }
+
+            // ---------- Escenario A: commit ----------
+            System.out.println();
+            System.out.println("--- ESCENARIO A: COMMIT ---");
+            ArrayList<Categoria> loteA = new ArrayList<Categoria>();
+            loteA.add(new Categoria(id1, "Demo TX " + id1));
+            loteA.add(new Categoria(id2, "Demo TX " + id2));
+            OperacionesBD.insertarCategoriasEnTransaccion(loteA);
+            System.out.println("setAutoCommit(false) -> 2 INSERT -> commit()");
+
+            if (OperacionesBD.buscarCategoria(id1) != null && OperacionesBD.buscarCategoria(id2) != null) {
+                Colores.ok("Commit correcto: las categorías " + id1 + " y " + id2 + " existen en MySQL.");
+            } else {
+                Colores.error("Algo ha fallado: no se encuentran las dos categorías.");
+            }
+
+            // ---------- Escenario B: rollback ----------
+            System.out.println();
+            System.out.println("--- ESCENARIO B: ROLLBACK ---");
+            ArrayList<Categoria> loteB = new ArrayList<Categoria>();
+            loteB.add(new Categoria(id3, "Demo TX " + id3));
+            loteB.add(new Categoria(id1, "Demo TX duplicada")); // ID repetido a propósito
+            try {
+                OperacionesBD.insertarCategoriasEnTransaccion(loteB);
+                Colores.error("No se ha producido el error esperado.");
+            } catch (SQLException e) {
+                Colores.aviso("Error esperado capturado: " + explicarError(e));
+                System.out.println("Se ha ejecutado rollback().");
+            }
+            if (OperacionesBD.buscarCategoria(id3) == null) {
+                Colores.ok("Rollback correcto: la categoría " + id3
+                        + " (primera inserción del intento fallido) NO se ha guardado.");
+            } else {
+                Colores.error("La categoría " + id3 + " existe: el rollback no ha funcionado.");
+            }
+
+            // ---------- Limpieza ----------
+            System.out.println();
+            if (confirmar("¿Eliminar ahora las categorías de demostración " + id1 + " y " + id2 + "?")) {
+                OperacionesBD.eliminarCategoria(id1);
+                OperacionesBD.eliminarCategoria(id2);
+                Colores.ok("Categorías de demostración eliminadas.");
+            } else {
+                Colores.aviso("Se conservan. Para borrarlas después: menú de categorías -> eliminar IDs "
+                        + id1 + " y " + id2 + ".");
+            }
         } catch (SQLException e) {
             Colores.error(explicarError(e));
         }
