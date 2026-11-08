@@ -7,3 +7,7 @@ target/
 # Salidas generadas por el alumnado (no se ignoran los ejemplos de entrada)
 datos/salidas/*
 !datos/salidas/.gitkeep
+# UT2: configuración local con la contraseña de MySQL (NO se sube)
+config/bd.properties
+# UT2: base de datos SQLite de la demo
+datos/sqlite/

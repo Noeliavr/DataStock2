@@ -1,6 +1,5 @@
 package es.iesisidra.datastock.modelo;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -12,7 +11,7 @@ import java.math.BigDecimal;
  * su existencia en base de datos se comprobará al trabajar con JDBC en UT2.</p>
  */
 public class Producto implements Serializable {
-    @Serial private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     private String codigo;
     private String nombre;
