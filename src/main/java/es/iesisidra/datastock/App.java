@@ -57,6 +57,7 @@ public class App {
             System.out.println("4. Consultar productos");
             System.out.println("5. Exportar productos");
             System.out.println("6. Guardar y recuperar inventario");
+            System.out.println("7. Gestionar base de datos MySQL");
             System.out.println("0. Salir");
             System.out.println("------------------------------------------------");
             opcion = leerNumero("Selecciona una opción: ");
@@ -81,6 +82,8 @@ public class App {
                 case 6:
                     menuGuardarRecuperar();
                     break;
+                case 7:
+                    MenuMySQL.mostrarMenu();
                 case 0:
                     System.out.println("Hasta pronto.");
                     break;
