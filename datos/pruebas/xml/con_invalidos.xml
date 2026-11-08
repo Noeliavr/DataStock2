@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalogo>
+  <producto>
+    <codigo>POR-050</codigo><nombre>Portátil 15 pulgadas</nombre>
+    <precio>599.00</precio><stock>2</stock>
+    <categoriaId>2</categoriaId><proveedorId>3</proveedorId>
+  </producto>
+  <producto>
+    <codigo>SIN-051</codigo><nombre>Sin precio</nombre>
+    <stock>2</stock><categoriaId>2</categoriaId><proveedorId>3</proveedorId>
+  </producto>
+  <producto>
+    <codigo>LET-052</codigo><nombre>Precio con letras</nombre>
+    <precio>doce</precio><stock>2</stock>
+    <categoriaId>2</categoriaId><proveedorId>3</proveedorId>
+  </producto>
+  <producto>
+    <codigo>NEG-053</codigo><nombre>Stock negativo</nombre>
+    <precio>5.00</precio><stock>-3</stock>
+    <categoriaId>2</categoriaId><proveedorId>3</proveedorId>
+  </producto>
+</catalogo>

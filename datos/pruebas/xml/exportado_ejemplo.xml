@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalogo>
+  <producto>
+    <codigo>ALT-010</codigo>
+    <nombre>Altavoces estéreo</nombre>
+    <precio>24.90</precio>
+    <stock>7</stock>
+    <categoriaId>3</categoriaId>
+    <proveedorId>2</proveedorId>
+  </producto>
+  <producto>
+    <codigo>IMP-006</codigo>
+    <nombre>Impresora láser</nombre>
+    <precio>100.00</precio>
+    <stock>3</stock>
+    <categoriaId>3</categoriaId>
+    <proveedorId>1</proveedorId>
+  </producto>
+  <producto>
+    <codigo>MON-003</codigo>
+    <nombre>Monitor 24 pulgadas</nombre>
+    <precio>149.99</precio>
+    <stock>6</stock>
+    <categoriaId>2</categoriaId>
+    <proveedorId>2</proveedorId>
+  </producto>
+  <producto>
+    <codigo>MON-005</codigo>
+    <nombre>Monitor 27 pulgadas</nombre>
+    <precio>219.00</precio>
+    <stock>4</stock>
+    <categoriaId>2</categoriaId>
+    <proveedorId>2</proveedorId>
+  </producto>
+  <producto>
+    <codigo>RAT-002</codigo>
+    <nombre>Ratón inalámbrico</nombre>
+    <precio>14.50</precio>
+    <stock>25</stock>
+    <categoriaId>1</categoriaId>
+    <proveedorId>1</proveedorId>
+  </producto>
+  <producto>
+    <codigo>TEC-001</codigo>
+    <nombre>Teclado USB</nombre>
+    <precio>19.95</precio>
+    <stock>12</stock>
+    <categoriaId>1</categoriaId>
+    <proveedorId>1</proveedorId>
+  </producto>
+</catalogo>

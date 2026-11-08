@@ -1,0 +1,14 @@
+{
+  "productos": [
+    {"codigo":"  sil-040  ","nombre":"Silla gaming","precio":"149.00","stock":3,"categoriaId":5,"proveedorId":3},
+    {"codigo":"FAL-041","precio":10,"stock":1,"categoriaId":1,"proveedorId":1},
+    {"codigo":"NUM-042","nombre":"Stock con letras","precio":10,"stock":"abc","categoriaId":1,"proveedorId":1},
+    {"codigo":"CAT-043","nombre":"Categoría cero","precio":10,"stock":1,"categoriaId":0,"proveedorId":1},
+    {"codigo":"CODIGO-MUY-LARGO-01","nombre":"Código largo","precio":10,"stock":1,"categoriaId":1,"proveedorId":1},
+    {"codigo":"MAL_045","nombre":"Código con guion bajo","precio":10,"stock":1,"categoriaId":1,"proveedorId":1},
+    {"codigo":"NOM-046","nombre":"AB","precio":10,"stock":1,"categoriaId":1,"proveedorId":1},
+    {"codigo":"DEC-047","nombre":"Stock decimal","precio":10,"stock":2.5,"categoriaId":1,"proveedorId":1},
+    {"codigo":"DUP-048","nombre":"Primero","precio":10,"stock":1,"categoriaId":1,"proveedorId":1},
+    {"codigo":"dup-048","nombre":"Repetido en el fichero","precio":10,"stock":1,"categoriaId":1,"proveedorId":1}
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "productos": [
+    {
+      "codigo": "ALT-010",
+      "nombre": "Altavoces estéreo",
+      "precio": 24.90,
+      "stock": 7,
+      "categoriaId": 3,
+      "proveedorId": 2
+    },
+    {
+      "codigo": "IMP-006",
+      "nombre": "Impresora láser",
+      "precio": 100.00,
+      "stock": 3,
+      "categoriaId": 3,
+      "proveedorId": 1
+    },
+    {
+      "codigo": "MON-003",
+      "nombre": "Monitor 24 pulgadas",
+      "precio": 149.99,
+      "stock": 6,
+      "categoriaId": 2,
+      "proveedorId": 2
+    },
+    {
+      "codigo": "MON-005",
+      "nombre": "Monitor 27 pulgadas",
+      "precio": 219.00,
+      "stock": 4,
+      "categoriaId": 2,
+      "proveedorId": 2
+    },
+    {
+      "codigo": "RAT-002",
+      "nombre": "Ratón inalámbrico",
+      "precio": 14.50,
+      "stock": 25,
+      "categoriaId": 1,
+      "proveedorId": 1
+    },
+    {
+      "codigo": "TEC-001",
+      "nombre": "Teclado USB",
+      "precio": 19.95,
+      "stock": 12,
+      "categoriaId": 1,
+      "proveedorId": 1
+    }
+  ]
+}

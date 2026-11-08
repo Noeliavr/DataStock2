@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalogo>
+  <producto>
+    <codigo>MON-003</codigo><nombre>Monitor 24 pulgadas</nombre>
+    <precio>149.99</precio><stock>6</stock>
+    <categoriaId>2</categoriaId><proveedorId>2</proveedorId>
+  </producto>
+  <producto>
+    <codigo>MON-005</codigo><nombre>Monitor 27 pulgadas</nombre>
+    <precio>219.00</precio><stock>4</stock>
+    <categoriaId>2</categoriaId><proveedorId>2</proveedorId>
+  </producto>
+  <producto>
+    <codigo>IMP-006</codigo><nombre>Impresora láser</nombre>
+    <precio>100.00</precio><stock>3</stock>
+    <categoriaId>3</categoriaId><proveedorId>1</proveedorId>
+  </producto>
+</catalogo>

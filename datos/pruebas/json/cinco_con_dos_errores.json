@@ -1,0 +1,9 @@
+{
+  "productos": [
+    {"codigo":"CAB-020","nombre":"Cable HDMI 2 m","precio":8.99,"stock":40,"categoriaId":4,"proveedorId":1},
+    {"codigo":"HUB-021","nombre":"Hub USB 4 puertos","precio":12.00,"stock":15,"categoriaId":4,"proveedorId":2},
+    {"codigo":"WEB-022","nombre":"Webcam HD","precio":29.99,"stock":9,"categoriaId":1,"proveedorId":2},
+    {"codigo":"TEC-004","nombre":"Teclado mecánico","precio":-5,"stock":8,"categoriaId":1,"proveedorId":1},
+    {"codigo":"","nombre":"Producto sin código","precio":3.50,"stock":1,"categoriaId":1,"proveedorId":1}
+  ]
+}
