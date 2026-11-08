@@ -1,0 +1,6 @@
+{
+  "productos": [
+    {"codigo":"SSD-040","nombre":"Disco SSD 1 TB","precio":69.90,"stock":12,"categoriaId":1,"proveedorId":1},
+    {"codigo":"RAM-041","nombre":"Memoria RAM 16 GB","precio":45.00,"stock":20,"categoriaId":1,"proveedorId":1}
+  ]
+}

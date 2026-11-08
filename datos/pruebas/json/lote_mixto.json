@@ -1,0 +1,10 @@
+{
+  "productos": [
+    {"codigo":"TEC-001","nombre":"Teclado mecánico","precio":49.90,"stock":10,"categoriaId":1,"proveedorId":1},
+    {"codigo":"HUB-030","nombre":"Hub USB 4 puertos","precio":12.00,"stock":15,"categoriaId":1,"proveedorId":1},
+    {"codigo":"CAB-031","nombre":"Cable HDMI","precio":8.50,"stock":40,"categoriaId":1,"proveedorId":1},
+    {"codigo":"ALT-032","nombre":"Altavoces","precio":24.90,"stock":7,"categoriaId":99,"proveedorId":1},
+    {"codigo":"WEB-033","nombre":"Webcam HD","precio":29.99,"stock":9,"categoriaId":1,"proveedorId":99},
+    {"codigo":"PRE-034","nombre":"Precio con 3 decimales","precio":10.555,"stock":1,"categoriaId":1,"proveedorId":1}
+  ]
+}
