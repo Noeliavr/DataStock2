@@ -49,6 +49,9 @@ public class MenuMySQL {
                 case 4:
                     menuProductos();
                     break;
+                case 5:
+                    menuConsultas();
+                    break;
                 case 0:
                     break;
                 default:
@@ -782,6 +785,89 @@ public class MenuMySQL {
             } else {
                 Colores.error(explicarError(e));
             }
+        }
+    }
+    static void menuConsultas() {
+        int opcion;
+        do {
+            System.out.println();
+            System.out.println("------------- MENÚ DE CONSULTAS -------------");
+            System.out.println("1. Listar todos los productos");
+            System.out.println("2. Buscar producto por código");
+            System.out.println("3. Buscar productos por nombre");
+            System.out.println("4. Consultar productos con stock inferior a un umbral");
+            System.out.println("0. Volver al menú MySQL");
+            opcion = App.leerNumero("Selecciona una opción: ");
+
+            switch (opcion) {
+                case 1:
+                    listarProductos();
+                    break;
+                case 2:
+                    consultarProducto();
+                    break;
+                case 3:
+                    buscarPorNombre();
+                    break;
+                case 4:
+                    stockInferior();
+                    break;
+                case 0:
+                    break;
+                default:
+                    Colores.error("Opción no válida.");
+                    break;
+            }
+        } while (opcion != 0);
+    }
+
+    // Muestra una lista de productos o un aviso si está vacía
+    static void mostrarLista(ArrayList<ProductoDetalle> lista) {
+        if (lista.isEmpty()) {
+            Colores.aviso("No se han encontrado productos.");
+            return;
+        }
+        System.out.println("------------------------------------------------------------");
+        for (ProductoDetalle p : lista) {
+            mostrarFicha(p);
+        }
+        System.out.println("Total de productos encontrados: " + lista.size());
+    }
+
+    static void listarProductos() {
+        System.out.println("===== PRODUCTOS ALMACENADOS EN MYSQL =====");
+        try {
+            mostrarLista(OperacionesBD.listarProductos());
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void buscarPorNombre() {
+        System.out.println("===== BUSCAR POR NOMBRE =====");
+        String texto = App.leerTexto("Texto a buscar: ").trim();
+        if (texto.isEmpty()) {
+            Colores.error("El texto de búsqueda no puede estar vacío.");
+            return;
+        }
+        try {
+            mostrarLista(OperacionesBD.buscarPorNombre(texto));
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void stockInferior() {
+        System.out.println("===== STOCK INFERIOR A UN UMBRAL =====");
+        int umbral = App.leerNumero("Umbral (se muestran los productos con stock menor): ");
+        if (umbral < 0) {
+            Colores.error("El umbral debe ser mayor o igual que 0.");
+            return;
+        }
+        try {
+            mostrarLista(OperacionesBD.stockInferior(umbral));
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
         }
     }
 }

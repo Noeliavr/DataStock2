@@ -271,4 +271,48 @@ public class OperacionesBD {
             return ps.executeUpdate();
         }
     }
+        public static ArrayList<ProductoDetalle> listarProductos() throws SQLException {
+        ArrayList<ProductoDetalle> lista = new ArrayList<ProductoDetalle>();
+        String sql = SELECT_PRODUCTO + "ORDER BY p.codigo";
+        try (Connection con = ConexionBD.getConexion();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                lista.add(leerProducto(rs));
+            }
+        }
+        return lista;
+    }
+
+    // Búsqueda parcial: LIKE '%texto%' (el texto va como parámetro, no pegado al SQL)
+    public static ArrayList<ProductoDetalle> buscarPorNombre(String texto) throws SQLException {
+        ArrayList<ProductoDetalle> lista = new ArrayList<ProductoDetalle>();
+        String sql = SELECT_PRODUCTO + "WHERE p.nombre LIKE ? ORDER BY p.codigo";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, "%" + texto + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(leerProducto(rs));
+                }
+            }
+        }
+        return lista;
+    }
+
+    // Productos con stock estrictamente menor que el umbral
+    public static ArrayList<ProductoDetalle> stockInferior(int umbral) throws SQLException {
+        ArrayList<ProductoDetalle> lista = new ArrayList<ProductoDetalle>();
+        String sql = SELECT_PRODUCTO + "WHERE p.stock < ? ORDER BY p.stock, p.codigo";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, umbral);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(leerProducto(rs));
+                }
+            }
+        }
+        return lista;
+    }
 }
