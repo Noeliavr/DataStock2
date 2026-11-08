@@ -1,15 +1,20 @@
 package es.iesisidra.datastock;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 import es.iesisidra.datastock.bd.OperacionesBD;
 import es.iesisidra.datastock.modelo.Categoria;
+import es.iesisidra.datastock.modelo.Producto;
+import es.iesisidra.datastock.modelo.ProductoDetalle;
 import es.iesisidra.datastock.modelo.Proveedor;
 import es.iesisidra.datastock.util.Colores;
 
 
 public class MenuMySQL {
+        // Precio máximo que cabe en DECIMAL(10,2)
+    static final BigDecimal PRECIO_MAXIMO = new BigDecimal("99999999.99");
 
     public static void mostrarMenu() {
         int opcion;
@@ -40,6 +45,9 @@ public class MenuMySQL {
                     break;
                 case 3:
                     menuProveedores();
+                    break;
+                case 4:
+                    menuProductos();
                     break;
                 case 0:
                     break;
@@ -474,6 +482,303 @@ public class MenuMySQL {
         } catch (SQLException e) {
             if (e.getErrorCode() == 1451) {
                 Colores.error("El proveedor tiene productos asociados. MySQL impide borrarlo (clave foránea).");
+            } else {
+                Colores.error(explicarError(e));
+            }
+        }
+    }
+
+
+    static String validarCodigo(String codigo) {
+        if (codigo.isEmpty()) {
+            return "El código es obligatorio.";
+        }
+        if (codigo.length() > 12) {
+            return "El código no puede tener más de 12 caracteres.";
+        }
+        if (!codigo.matches("[A-Z0-9-]+")) {
+            return "El código solo admite letras A-Z, números y guiones.";
+        }
+        return null;
+    }
+
+    static String validarNombreProducto(String nombre) {
+        if (nombre.length() < 3 || nombre.length() > 100) {
+            return "El nombre debe tener entre 3 y 100 caracteres.";
+        }
+        return null;
+    }
+
+    static String validarPrecio(BigDecimal precio) {
+        if (precio.compareTo(BigDecimal.ZERO) <= 0) {
+            return "El precio debe ser mayor que 0.";
+        }
+        // stripTrailingZeros quita ceros del final: 12.50 -> 12.5 ; scale() = nº de decimales
+        if (precio.stripTrailingZeros().scale() > 2) {
+            return "El precio no puede tener más de 2 decimales.";
+        }
+        if (precio.compareTo(PRECIO_MAXIMO) > 0) {
+            return "El precio es demasiado grande (máximo 99999999.99).";
+        }
+        return null;
+    }
+
+    // Convierte el texto a BigDecimal; acepta coma o punto. Devuelve null si no es un número.
+    static BigDecimal convertirPrecio(String texto) {
+        try {
+            return new BigDecimal(texto.trim().replace(',', '.'));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // Convierte el texto a entero. Devuelve null si no es un número.
+    static Integer convertirEntero(String texto) {
+        try {
+            return Integer.parseInt(texto.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // Muestra todos los datos de un producto leído de MySQL
+    static void mostrarFicha(ProductoDetalle p) {
+        System.out.println("Código: " + p.getCodigo());
+        System.out.println("Nombre: " + p.getNombre());
+        System.out.println("Precio: " + p.getPrecio() + " €");
+        System.out.println("Stock: " + p.getStock());
+        System.out.println("Categoría: " + p.getCategoriaId() + " - " + p.getNombreCategoria());
+        System.out.println("Proveedor: " + p.getProveedorId() + " - " + p.getNombreProveedor());
+        System.out.println("------------------------------------------------------------");
+    }
+
+    static void menuProductos() {
+        int opcion;
+        do {
+            System.out.println();
+            System.out.println("------------- MENÚ DE PRODUCTOS -------------");
+            System.out.println("1. Dar de alta un producto");
+            System.out.println("2. Consultar producto por código");
+            System.out.println("3. Modificar un producto");
+            System.out.println("4. Eliminar un producto");
+            System.out.println("0. Volver al menú MySQL");
+            opcion = App.leerNumero("Selecciona una opción: ");
+
+            switch (opcion) {
+                case 1:
+                    altaProducto();
+                    break;
+                case 2:
+                    consultarProducto();
+                    break;
+                case 3:
+                    modificarProducto();
+                    break;
+                case 4:
+                    eliminarProducto();
+                    break;
+                case 0:
+                    break;
+                default:
+                    Colores.error("Opción no válida.");
+                    break;
+            }
+        } while (opcion != 0);
+    }
+
+    static void altaProducto() {
+        System.out.println("===== ALTA DE PRODUCTO =====");
+
+        // 1) Pedir y validar los datos en Java
+        String codigo = App.leerTexto("Código (máx. 12: A-Z, 0-9 y -): ").trim().toUpperCase();
+        String error = validarCodigo(codigo);
+        if (error != null) {
+            Colores.error(error);
+            return;
+        }
+        String nombre = App.leerTexto("Nombre (3 a 100 caracteres): ").trim();
+        error = validarNombreProducto(nombre);
+        if (error != null) {
+            Colores.error(error);
+            return;
+        }
+        BigDecimal precio = convertirPrecio(App.leerTexto("Precio (ej. 49.90): "));
+        if (precio == null) {
+            Colores.error("El precio debe ser un número.");
+            return;
+        }
+        error = validarPrecio(precio);
+        if (error != null) {
+            Colores.error(error);
+            return;
+        }
+        int stock = App.leerNumero("Stock inicial: ");
+        if (stock < 0) {
+            Colores.error("El stock no puede ser negativo.");
+            return;
+        }
+        int categoriaId = App.leerNumero("ID de categoría: ");
+        int proveedorId = App.leerNumero("ID de proveedor: ");
+        if (categoriaId <= 0 || proveedorId <= 0) {
+            Colores.error("Los ID de categoría y proveedor deben ser enteros positivos.");
+            return;
+        }
+
+        // 2) Comprobar en MySQL: código repetido y que existan categoría y proveedor
+        try {
+            if (OperacionesBD.buscarProducto(codigo) != null) {
+                Colores.error("El producto " + codigo + " ya existe en MySQL. No se sobrescribe.");
+                return;
+            }
+            if (OperacionesBD.buscarCategoria(categoriaId) == null) {
+                Colores.error("No existe la categoría con ID " + categoriaId + ". Dala de alta primero.");
+                return;
+            }
+            if (OperacionesBD.buscarProveedor(proveedorId) == null) {
+                Colores.error("No existe el proveedor con ID " + proveedorId + ". Dalo de alta primero.");
+                return;
+            }
+
+            // 3) Insertar
+            OperacionesBD.insertarProducto(new Producto(codigo, nombre, precio, stock, categoriaId, proveedorId));
+            Colores.ok("Producto " + codigo + " guardado correctamente.");
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void consultarProducto() {
+        System.out.println("===== CONSULTAR PRODUCTO =====");
+        String codigo = App.leerTexto("Código: ").trim().toUpperCase();
+        if (codigo.isEmpty()) {
+            Colores.error("El código no puede estar vacío.");
+            return;
+        }
+        try {
+            ProductoDetalle p = OperacionesBD.buscarProducto(codigo);
+            if (p == null) {
+                Colores.aviso("No existe ningún producto con el código " + codigo + ".");
+            } else {
+                mostrarFicha(p);
+            }
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void modificarProducto() {
+        System.out.println("===== MODIFICAR PRODUCTO =====");
+        String codigo = App.leerTexto("Código: ").trim().toUpperCase();
+        try {
+            ProductoDetalle actual = OperacionesBD.buscarProducto(codigo);
+            if (actual == null) {
+                Colores.error("No existe ningún producto con el código " + codigo + ".");
+                return;
+            }
+            mostrarFicha(actual);
+            System.out.println("(Pulsa Intro para conservar cada valor. El código no se puede cambiar.)");
+            System.out.println("(El stock solo se cambia desde 'Registrar entrada o salida de stock'.)");
+
+            // Nombre
+            String nombre = App.leerTexto("Nuevo nombre: ").trim();
+            if (nombre.isEmpty()) {
+                nombre = actual.getNombre();
+            } else {
+                String error = validarNombreProducto(nombre);
+                if (error != null) {
+                    Colores.error(error);
+                    return;
+                }
+            }
+
+            // Precio
+            BigDecimal precio = actual.getPrecio();
+            String texto = App.leerTexto("Nuevo precio: ").trim();
+            if (!texto.isEmpty()) {
+                precio = convertirPrecio(texto);
+                if (precio == null) {
+                    Colores.error("El precio debe ser un número.");
+                    return;
+                }
+                String error = validarPrecio(precio);
+                if (error != null) {
+                    Colores.error(error);
+                    return;
+                }
+            }
+
+            // Categoría
+            int categoriaId = actual.getCategoriaId();
+            texto = App.leerTexto("Nuevo ID de categoría: ").trim();
+            if (!texto.isEmpty()) {
+                Integer numero = convertirEntero(texto);
+                if (numero == null || numero <= 0) {
+                    Colores.error("El ID de categoría debe ser un entero positivo.");
+                    return;
+                }
+                if (OperacionesBD.buscarCategoria(numero) == null) {
+                    Colores.error("No existe la categoría con ID " + numero + ".");
+                    return;
+                }
+                categoriaId = numero;
+            }
+
+            // Proveedor
+            int proveedorId = actual.getProveedorId();
+            texto = App.leerTexto("Nuevo ID de proveedor: ").trim();
+            if (!texto.isEmpty()) {
+                Integer numero = convertirEntero(texto);
+                if (numero == null || numero <= 0) {
+                    Colores.error("El ID de proveedor debe ser un entero positivo.");
+                    return;
+                }
+                if (OperacionesBD.buscarProveedor(numero) == null) {
+                    Colores.error("No existe el proveedor con ID " + numero + ".");
+                    return;
+                }
+                proveedorId = numero;
+            }
+
+            if (!confirmar("¿Guardar los cambios del producto " + codigo + "?")) {
+                Colores.aviso("Operación cancelada. No se ha modificado nada.");
+                return;
+            }
+            // El stock se pasa tal cual, pero el UPDATE no lo usa
+            Producto nuevo = new Producto(codigo, nombre, precio, actual.getStock(), categoriaId, proveedorId);
+            int filas = OperacionesBD.modificarProducto(nuevo);
+            if (filas == 1) {
+                Colores.ok("Producto " + codigo + " modificado correctamente.");
+            } else {
+                Colores.error("No se ha modificado ninguna fila (el producto ya no existe).");
+            }
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void eliminarProducto() {
+        System.out.println("===== ELIMINAR PRODUCTO =====");
+        String codigo = App.leerTexto("Código: ").trim().toUpperCase();
+        try {
+            ProductoDetalle actual = OperacionesBD.buscarProducto(codigo);
+            if (actual == null) {
+                Colores.error("No existe ningún producto con el código " + codigo + ".");
+                return;
+            }
+            mostrarFicha(actual);
+            if (!confirmar("¿Confirmas la eliminación?")) {
+                Colores.aviso("Operación cancelada. El producto sigue en MySQL.");
+                return;
+            }
+            int filas = OperacionesBD.eliminarProducto(codigo);
+            if (filas == 1) {
+                Colores.ok("Producto " + codigo + " eliminado correctamente.");
+            } else {
+                Colores.error("No se ha borrado ninguna fila (el producto ya no existe).");
+            }
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 1451) {
+                Colores.error("El producto tiene movimientos de stock. No se borra para conservar el historial.");
             } else {
                 Colores.error(explicarError(e));
             }

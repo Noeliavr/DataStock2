@@ -11,6 +11,8 @@ import java.sql.Types;
 
 import es.iesisidra.datastock.config.ConexionBD;
 import es.iesisidra.datastock.modelo.Categoria;
+import es.iesisidra.datastock.modelo.Producto;
+import es.iesisidra.datastock.modelo.ProductoDetalle;
 import es.iesisidra.datastock.modelo.Proveedor;
 
 public class OperacionesBD {
@@ -185,6 +187,88 @@ public class OperacionesBD {
             ps.setNull(posicion, Types.VARCHAR);
         } else {
             ps.setString(posicion, email);
+        }
+    }
+
+
+    // SELECT común con JOIN para traer también los nombres de categoría y proveedor
+    private static final String SELECT_PRODUCTO =
+            "SELECT p.codigo, p.nombre, p.precio, p.stock, p.categoria_id, p.proveedor_id, "
+            + "c.nombre AS categoria, pr.nombre AS proveedor "
+            + "FROM producto p "
+            + "JOIN categoria c ON p.categoria_id = c.id "
+            + "JOIN proveedor pr ON p.proveedor_id = pr.id ";
+
+    private static final String INSERT_PRODUCTO =
+            "INSERT INTO producto (codigo, nombre, precio, stock, categoria_id, proveedor_id) "
+            + "VALUES (?, ?, ?, ?, ?, ?)";
+
+    // Convierte la fila actual del ResultSet en un objeto Java
+    private static ProductoDetalle leerProducto(ResultSet rs) throws SQLException {
+        return new ProductoDetalle(
+                rs.getString("codigo"),
+                rs.getString("nombre"),
+                rs.getBigDecimal("precio"),
+                rs.getInt("stock"),
+                rs.getInt("categoria_id"),
+                rs.getInt("proveedor_id"),
+                rs.getString("categoria"),
+                rs.getString("proveedor"));
+    }
+
+    // Rellena los 6 ? del INSERT con los datos del producto
+    private static void prepararInsert(PreparedStatement ps, Producto p) throws SQLException {
+        ps.setString(1, p.getCodigo());
+        ps.setString(2, p.getNombre());
+        ps.setBigDecimal(3, p.getPrecio());
+        ps.setInt(4, p.getStock());
+        ps.setInt(5, p.getCategoriaId());
+        ps.setInt(6, p.getProveedorId());
+    }
+
+    // Devuelve el producto o null si no existe
+    public static ProductoDetalle buscarProducto(String codigo) throws SQLException {
+        String sql = SELECT_PRODUCTO + "WHERE p.codigo = ?";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, codigo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return leerProducto(rs);
+                }
+                return null;
+            }
+        }
+    }
+
+    public static void insertarProducto(Producto p) throws SQLException {
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(INSERT_PRODUCTO)) {
+            prepararInsert(ps, p);
+            ps.executeUpdate();
+        }
+    }
+
+    // Modifica nombre, precio, categoría y proveedor. El stock y el código NO se tocan.
+    public static int modificarProducto(Producto p) throws SQLException {
+        String sql = "UPDATE producto SET nombre = ?, precio = ?, categoria_id = ?, proveedor_id = ? WHERE codigo = ?";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, p.getNombre());
+            ps.setBigDecimal(2, p.getPrecio());
+            ps.setInt(3, p.getCategoriaId());
+            ps.setInt(4, p.getProveedorId());
+            ps.setString(5, p.getCodigo());
+            return ps.executeUpdate();
+        }
+    }
+
+    public static int eliminarProducto(String codigo) throws SQLException {
+        String sql = "DELETE FROM producto WHERE codigo = ?";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, codigo);
+            return ps.executeUpdate();
         }
     }
 }
