@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import es.iesisidra.datastock.bd.OperacionesBD;
 import es.iesisidra.datastock.modelo.Categoria;
+import es.iesisidra.datastock.modelo.Proveedor;
 import es.iesisidra.datastock.util.Colores;
 
 
@@ -36,6 +37,9 @@ public class MenuMySQL {
                     break;
                 case 2:
                     menuCategorias();
+                    break;
+                case 3:
+                    menuProveedores();
                     break;
                 case 0:
                     break;
@@ -262,6 +266,214 @@ public class MenuMySQL {
         } catch (SQLException e) {
             if (e.getErrorCode() == 1451) {
                 Colores.error("La categoría tiene productos asociados. MySQL impide borrarla (clave foránea).");
+            } else {
+                Colores.error(explicarError(e));
+            }
+        }
+    }
+
+    static void menuProveedores() {
+        int opcion;
+        do {
+            System.out.println();
+            System.out.println("------------- MENÚ DE PROVEEDORES -------------");
+            System.out.println("1. Dar de alta un proveedor");
+            System.out.println("2. Listar proveedores");
+            System.out.println("3. Modificar un proveedor");
+            System.out.println("4. Eliminar un proveedor");
+            System.out.println("0. Volver al menú MySQL");
+            opcion = App.leerNumero("Selecciona una opción: ");
+
+            switch (opcion) {
+                case 1:
+                    altaProveedor();
+                    break;
+                case 2:
+                    listarProveedores();
+                    break;
+                case 3:
+                    modificarProveedor();
+                    break;
+                case 4:
+                    eliminarProveedor();
+                    break;
+                case 0:
+                    break;
+                default:
+                    Colores.error("Opción no válida.");
+                    break;
+            }
+        } while (opcion != 0);
+    }
+
+    static String validarNombreProveedor(String nombre) {
+        if (nombre.isEmpty()) {
+            return "El nombre es obligatorio.";
+        }
+        if (nombre.length() > 100) {
+            return "El nombre no puede tener más de 100 caracteres.";
+        }
+        return null;
+    }
+
+    // Formato básico: algo@algo.algo, sin espacios
+    static String validarEmail(String email) {
+        if (email.length() > 120) {
+            return "El email no puede tener más de 120 caracteres.";
+        }
+        if (!email.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")) {
+            return "El email no tiene un formato válido (ejemplo: nombre@empresa.com).";
+        }
+        return null;
+    }
+
+    static void altaProveedor() {
+        System.out.println("===== ALTA DE PROVEEDOR =====");
+        int id = App.leerNumero("ID de proveedor: ");
+        if (id <= 0) {
+            Colores.error("El ID debe ser un número entero positivo.");
+            return;
+        }
+        String nombre = App.leerTexto("Nombre: ").trim();
+        String error = validarNombreProveedor(nombre);
+        if (error != null) {
+            Colores.error(error);
+            return;
+        }
+        String email = App.leerTexto("Email (opcional, Intro para dejarlo vacío): ").trim();
+        if (email.isEmpty()) {
+            email = null; // se guardará como NULL
+        } else {
+            error = validarEmail(email);
+            if (error != null) {
+                Colores.error(error);
+                return;
+            }
+        }
+        try {
+            if (OperacionesBD.buscarProveedor(id) != null) {
+                Colores.error("Ya existe un proveedor con el ID " + id + ".");
+                return;
+            }
+            if (email != null && OperacionesBD.existeEmail(email, 0)) {
+                Colores.error("El email " + email + " ya está registrado en otro proveedor.");
+                return;
+            }
+            OperacionesBD.insertarProveedor(new Proveedor(id, nombre, email));
+            Colores.ok("Proveedor " + id + " - " + nombre + " registrado correctamente.");
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void listarProveedores() {
+        System.out.println("===== LISTADO DE PROVEEDORES =====");
+        try {
+            ArrayList<Proveedor> lista = OperacionesBD.listarProveedores();
+            if (lista.isEmpty()) {
+                Colores.aviso("No hay proveedores registrados.");
+                return;
+            }
+            System.out.println("ID     NOMBRE  |  EMAIL");
+            System.out.println("----------------------------------------");
+            for (Proveedor p : lista) {
+                String email = p.getEmail();
+                if (email == null) {
+                    email = "—";
+                }
+                System.out.println(p.getId() + "      " + p.getNombre() + "  |  " + email);
+            }
+            System.out.println("Total: " + lista.size());
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void modificarProveedor() {
+        System.out.println("===== MODIFICAR PROVEEDOR =====");
+        int id = App.leerNumero("ID del proveedor: ");
+        try {
+            Proveedor actual = OperacionesBD.buscarProveedor(id);
+            if (actual == null) {
+                Colores.error("No existe ningún proveedor con el ID " + id + ".");
+                return;
+            }
+            String emailActual = actual.getEmail();
+            if (emailActual == null) {
+                emailActual = "—";
+            }
+            System.out.println("Nombre actual: " + actual.getNombre());
+            System.out.println("Email actual: " + emailActual);
+            System.out.println("(Pulsa Intro para conservar el valor actual. En el email, escribe - para dejarlo vacío.)");
+
+            // Nombre
+            String nombre = App.leerTexto("Nuevo nombre: ").trim();
+            if (nombre.isEmpty()) {
+                nombre = actual.getNombre();
+            } else {
+                String error = validarNombreProveedor(nombre);
+                if (error != null) {
+                    Colores.error(error);
+                    return;
+                }
+            }
+
+            // Email
+            String email = App.leerTexto("Nuevo email: ").trim();
+            if (email.isEmpty()) {
+                email = actual.getEmail(); // conservar
+            } else if (email.equals("-")) {
+                email = null; // quitar el email
+            } else {
+                String error = validarEmail(email);
+                if (error != null) {
+                    Colores.error(error);
+                    return;
+                }
+                if (OperacionesBD.existeEmail(email, id)) {
+                    Colores.error("El email " + email + " ya está registrado en otro proveedor.");
+                    return;
+                }
+            }
+
+            if (!confirmar("¿Guardar los cambios del proveedor " + id + "?")) {
+                Colores.aviso("Operación cancelada. No se ha modificado nada.");
+                return;
+            }
+            int filas = OperacionesBD.modificarProveedor(new Proveedor(id, nombre, email));
+            if (filas == 1) {
+                Colores.ok("Proveedor " + id + " modificado correctamente.");
+            } else {
+                Colores.error("No se ha modificado ninguna fila (el proveedor ya no existe).");
+            }
+        } catch (SQLException e) {
+            Colores.error(explicarError(e));
+        }
+    }
+
+    static void eliminarProveedor() {
+        System.out.println("===== ELIMINAR PROVEEDOR =====");
+        int id = App.leerNumero("ID del proveedor: ");
+        try {
+            Proveedor actual = OperacionesBD.buscarProveedor(id);
+            if (actual == null) {
+                Colores.error("No existe ningún proveedor con el ID " + id + ".");
+                return;
+            }
+            System.out.println("Proveedor: " + actual.getId() + " - " + actual.getNombre());
+            if (!confirmar("¿Confirmas la eliminación?")) {
+                Colores.aviso("Operación cancelada. No se ha borrado nada.");
+                return;
+            }
+            int filas = OperacionesBD.eliminarProveedor(id);
+            if (filas == 1) {
+                Colores.ok("Proveedor " + id + " eliminado correctamente.");
+            } else {
+                Colores.error("No se ha borrado ninguna fila (el proveedor ya no existe).");
+            }
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 1451) {
+                Colores.error("El proveedor tiene productos asociados. MySQL impide borrarlo (clave foránea).");
             } else {
                 Colores.error(explicarError(e));
             }

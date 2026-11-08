@@ -7,9 +7,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.sql.Types;
 
 import es.iesisidra.datastock.config.ConexionBD;
 import es.iesisidra.datastock.modelo.Categoria;
+import es.iesisidra.datastock.modelo.Proveedor;
 
 public class OperacionesBD {
    public static String[] infoConexion() throws SQLException {
@@ -102,6 +104,87 @@ public class OperacionesBD {
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             return ps.executeUpdate();
+        }
+    }
+
+    public static Proveedor buscarProveedor(int id) throws SQLException {
+        String sql = "SELECT id, nombre, email FROM proveedor WHERE id = ?";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Proveedor(rs.getInt("id"), rs.getString("nombre"), rs.getString("email"));
+                }
+                return null;
+            }
+        }
+    }
+
+    // ¿Hay OTRO proveedor que ya use este email?
+    public static boolean existeEmail(String email, int idExcluido) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM proveedor WHERE email = ? AND id <> ?";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, email);
+            ps.setInt(2, idExcluido);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    public static void insertarProveedor(Proveedor p) throws SQLException {
+        String sql = "INSERT INTO proveedor (id, nombre, email) VALUES (?, ?, ?)";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, p.getId());
+            ps.setString(2, p.getNombre());
+            ponerEmail(ps, 3, p.getEmail());
+            ps.executeUpdate();
+        }
+    }
+
+    public static ArrayList<Proveedor> listarProveedores() throws SQLException {
+        ArrayList<Proveedor> lista = new ArrayList<Proveedor>();
+        String sql = "SELECT id, nombre, email FROM proveedor ORDER BY id";
+        try (Connection con = ConexionBD.getConexion();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                lista.add(new Proveedor(rs.getInt("id"), rs.getString("nombre"), rs.getString("email")));
+            }
+        }
+        return lista;
+    }
+
+    public static int modificarProveedor(Proveedor p) throws SQLException {
+        String sql = "UPDATE proveedor SET nombre = ?, email = ? WHERE id = ?";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, p.getNombre());
+            ponerEmail(ps, 2, p.getEmail());
+            ps.setInt(3, p.getId());
+            return ps.executeUpdate();
+        }
+    }
+
+    public static int eliminarProveedor(int id) throws SQLException {
+        String sql = "DELETE FROM proveedor WHERE id = ?";
+        try (Connection con = ConexionBD.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate();
+        }
+    }
+
+    // El email es opcional: si es null se guarda NULL en MySQL
+    private static void ponerEmail(PreparedStatement ps, int posicion, String email) throws SQLException {
+        if (email == null) {
+            ps.setNull(posicion, Types.VARCHAR);
+        } else {
+            ps.setString(posicion, email);
         }
     }
 }
