@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Actividad XPath (XPathActividad). Por código mon-003: encuentra el monitor (CP-XPATH-01). Por categoría 1: salen TEC-001 y DOC-007 (CP-XPATH-02). Precio superior a 100: sale solo MON-003, porque DOC-007 vale exactamente 100 y la condición es mayor que, no mayor o igual (CP-XPATH-03). Contar: 3 (CP-XPATH-04). -->
 <catalogo>
   <producto>
     <codigo>TEC-001</codigo><nombre>Teclado USB</nombre>

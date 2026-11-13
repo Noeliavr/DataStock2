@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Prueba extra. XML mal escrito: falta la etiqueta de cierre de catalogo al final. Resultado esperado: error de XML mal formado y no se importa nada. -->
 <catalogo>
   <producto>
     <codigo>MAL-001</codigo><nombre>Etiqueta sin cerrar</nombre>

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Ejemplo de lo que genera la opción 5 (exportar a XML) con 6 productos, ordenados por código y con sangría. Se puede volver a importar con la opción 3 (CP-EXP-05). -->
 <catalogo>
   <producto>
     <codigo>ALT-010</codigo>

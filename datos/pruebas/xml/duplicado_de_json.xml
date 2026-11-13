@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- CP-XML-04. Primero importa json/tres_validos.json (trae TEC-001) y después este XML con la opción 3. Resultado esperado: TEC-001 se rechaza por código duplicado y se conserva el producto original. -->
 <catalogo>
   <producto>
     <codigo>TEC-001</codigo><nombre>Teclado repetido desde XML</nombre>

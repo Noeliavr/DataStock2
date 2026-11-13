@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- CP-XPATH-05. Ataque XXE, copia de xml/con_dtd.xml. Resultado esperado: XPathActividad rechaza el documento porque tiene DOCTYPE. -->
 <!DOCTYPE catalogo [
   <!ENTITY secreto SYSTEM "file:///etc/passwd">
 ]>

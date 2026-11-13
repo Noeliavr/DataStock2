@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- CP-XML-03. Ataque XXE (XML External Entity). El DOCTYPE define una entidad llamada secreto que intenta leer un fichero del ordenador (/etc/passwd) y meterlo en el nombre. Resultado esperado: se rechaza el documento entero, porque el programa prohíbe los DOCTYPE con disallow-doctype-decl. -->
 <!DOCTYPE catalogo [
   <!ENTITY secreto SYSTEM "file:///etc/passwd">
 ]>

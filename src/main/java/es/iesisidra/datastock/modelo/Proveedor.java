@@ -1,4 +1,4 @@
-package es.iesisidra.datastock.modelo;
+
 
 /**
  * Empresa suministradora de artículos. Su correo electrónico es opcional.

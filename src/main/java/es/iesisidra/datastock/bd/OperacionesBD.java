@@ -7,6 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+
+import Proveedor;
+
 import java.sql.Types;
 import java.sql.CallableStatement;
 
@@ -15,7 +18,6 @@ import es.iesisidra.datastock.modelo.Categoria;
 import es.iesisidra.datastock.modelo.MovimientoStock;
 import es.iesisidra.datastock.modelo.Producto;
 import es.iesisidra.datastock.modelo.ProductoDetalle;
-import es.iesisidra.datastock.modelo.Proveedor;
 
 public class OperacionesBD {
    public static String[] infoConexion() throws SQLException {

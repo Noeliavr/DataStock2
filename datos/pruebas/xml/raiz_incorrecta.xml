@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Prueba extra. XML bien escrito, pero la raíz es productos en vez de catalogo. Resultado esperado: la raíz debe ser catalogo y no se importa nada. -->
 <productos>
   <producto>
     <codigo>RAI-001</codigo><nombre>Raíz mal</nombre>
