@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-import Proveedor;
+import es.iesisidra.datastock.modelo.Proveedor;
 
 import java.sql.Types;
 import java.sql.CallableStatement;

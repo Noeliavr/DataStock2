@@ -84,6 +84,7 @@ public class App {
                     break;
                 case 7:
                     MenuMySQL.mostrarMenu();
+                    break;
                 case 0:
                     System.out.println("Hasta pronto.");
                     break;

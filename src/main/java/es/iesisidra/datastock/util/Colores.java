@@ -8,14 +8,14 @@ public class Colores {
     public static final String AMARILLO = "\u001B[33m";
 
     public static void ok(String mensaje){
-        System.out.println(VERDE + "[OK]" + mensaje + RESET);
+        System.out.println(VERDE + "[OK] " + mensaje + RESET);
     }
 
     public static void error(String mensaje){
-        System.out.println(ROJO + "[ERROR]" + mensaje + RESET);
+        System.out.println(ROJO + "[ERROR] " + mensaje + RESET);
     }
 
     public static void aviso(String mensaje){
-        System.out.println(AMARILLO + "[Aviso]" + mensaje + RESET);
+        System.out.println(AMARILLO + "[AVISO] " + mensaje + RESET);
     }
 }
