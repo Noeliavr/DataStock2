@@ -1,14 +1,16 @@
 package es.iesisidra.datastock;
 
 import es.iesisidra.datastock.modelo.Producto;
+import es.iesisidra.datastock.componentes.LectorProductosJson;
+import es.iesisidra.datastock.componentes.ResultadoLecturaJson;
+import es.iesisidra.datastock.util.Colores;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
+
+
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -26,13 +28,13 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -355,71 +357,60 @@ public class App {
     // RF-FIC-02. IMPORTAR UN CATÁLOGO JSON (Gson)
     // ================================================================
 
+    // ================================================================
+    // RF-FIC-02. IMPORTAR UN CATÁLOGO JSON
+    // UT3: la lectura y validación del fichero las hace el componente
+    // LectorProductosJson. Aquí solo se pide la ruta, se decide qué entra
+    // en el inventario y se muestran los mensajes.
+    // ================================================================
+
     static void importarJson() {
         System.out.println("===== IMPORTAR JSON =====");
-        File fichero = new File(leerTexto("Ruta: ").trim());
-        if (!comprobarFicheroLectura(fichero)) {
+        String ruta = leerTexto("Ruta: ").trim();
+        if (ruta.isEmpty()) {
+            Colores.error("La ruta no puede estar vacía.");
             return;
         }
 
-        // 1) Leer el fichero entero. Si está mal escrito, no se importa nada.
-        JsonElement raiz;
-        try (FileReader lector = new FileReader(fichero, StandardCharsets.UTF_8)) {
-            raiz = JsonParser.parseReader(lector);
-        } catch (JsonParseException e) {
-            System.out.println("Error: el JSON está mal formado. No se ha importado ningún producto.");
-            return;
+        // 1) El componente lee y valida el fichero
+        LectorProductosJson lector = new LectorProductosJson();
+        ResultadoLecturaJson resultado;
+        try {
+            resultado = lector.leer(Path.of(ruta));
         } catch (IOException e) {
-            System.out.println("Error al leer el fichero: " + e.getMessage());
+            Colores.error(e.getMessage()); // fichero inexistente, JSON mal formado...
             return;
         }
 
-        // 2) La raíz tiene que ser un objeto con el array "productos"
-        if (!raiz.isJsonObject()
-                || !raiz.getAsJsonObject().has("productos")
-                || !raiz.getAsJsonObject().get("productos").isJsonArray()) {
-            System.out.println("Error: el JSON debe ser un objeto con el array \"productos\". No se ha importado nada.");
-            return;
-        }
-        JsonArray array = raiz.getAsJsonObject().getAsJsonArray("productos");
-
-        // 3) Recorrer los productos y validarlos uno a uno
+        // 2) El inventario es del menú: aquí se descartan los que ya existen
         ArrayList<Producto> nuevos = new ArrayList<Producto>();
-        ArrayList<String> incidencias = new ArrayList<String>();
-
-        for (int i = 0; i < array.size(); i++) {
-            JsonElement elemento = array.get(i);
-            if (!elemento.isJsonObject()) {
-                incidencias.add("Producto " + (i + 1) + ": no es un objeto JSON.");
-                continue;
-            }
-            JsonObject obj = elemento.getAsJsonObject();
-
-            Producto p = crearProducto(i + 1,
-                    leerCampoJson(obj, "codigo"),
-                    leerCampoJson(obj, "nombre"),
-                    leerCampoJson(obj, "precio"),
-                    leerCampoJson(obj, "stock"),
-                    leerCampoJson(obj, "categoriaId"),
-                    leerCampoJson(obj, "proveedorId"),
-                    nuevos, incidencias);
-            if (p != null) {
+        ArrayList<String> incidencias = new ArrayList<String>(resultado.getIncidencias());
+        for (Producto p : resultado.getProductos()) {
+            if (buscarEnLista(inventario, p.getCodigo()) != null) {
+                incidencias.add(p.getCodigo() + ": código duplicado (ya existe en el inventario).");
+            } else {
                 nuevos.add(p);
             }
         }
+        inventario.addAll(nuevos);
 
-        // 4) Añadir los válidos y mostrar el resumen
-        terminarImportacion(array.size(), nuevos, incidencias);
-    }
-
-    // Devuelve el valor de un campo como texto, o null si no está
-    static String leerCampoJson(JsonObject obj, String campo) {
-        if (!obj.has(campo) || !obj.get(campo).isJsonPrimitive()) {
-            return null;
+        // 3) Mostrar el resumen
+        System.out.println("Productos encontrados: " + resultado.getEncontrados());
+        System.out.println("Importados: " + nuevos.size() + " | Rechazados: " + incidencias.size());
+        if (!nuevos.isEmpty()) {
+            Colores.ok("Importación finalizada. Productos añadidos al inventario: " + nuevos.size());
+        } else if (incidencias.isEmpty()) {
+            Colores.aviso("El fichero no contiene productos.");
+        } else {
+            Colores.error("No se ha importado ningún producto.");
         }
-        return obj.get(campo).getAsString();
+        if (!incidencias.isEmpty()) {
+            Colores.aviso("Incidencias:");
+            for (String incidencia : incidencias) {
+                System.out.println("- " + incidencia);
+            }
+        }
     }
-
     // ================================================================
     // RF-FIC-03. IMPORTAR UN CATÁLOGO XML (DOM)
     // ================================================================
