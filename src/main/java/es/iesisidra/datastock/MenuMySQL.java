@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import es.iesisidra.datastock.bd.OperacionesBD;
+import es.iesisidra.datastock.componentes.ConsultaProductoJdbc;
 import es.iesisidra.datastock.modelo.Categoria;
 import es.iesisidra.datastock.modelo.MovimientoStock;
 import es.iesisidra.datastock.modelo.Producto;
@@ -671,12 +673,16 @@ public class MenuMySQL {
             Colores.error("El código no puede estar vacío.");
             return;
         }
+        // UT3: la consulta la hace el componente ConsultaProductoJdbc.
+        // Aquí solo se pide el código y se muestra el resultado.
+        ConsultaProductoJdbc consulta = new ConsultaProductoJdbc();
         try {
-            ProductoDetalle p = OperacionesBD.buscarProducto(codigo);
-            if (p == null) {
-                Colores.aviso("No existe ningún producto con el código " + codigo + ".");
+            Optional<ProductoDetalle> resultado = consulta.buscarPorCodigo(codigo);
+            if (resultado.isPresent()) {
+                Colores.ok("Producto encontrado.");
+                mostrarFicha(resultado.get());
             } else {
-                mostrarFicha(p);
+                Colores.aviso("No existe ningún producto con el código " + codigo + ".");
             }
         } catch (SQLException e) {
             Colores.error(explicarError(e));
@@ -1180,4 +1186,4 @@ public class MenuMySQL {
             Colores.error(explicarError(e));
         }
     }
-}
+}

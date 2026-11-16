@@ -17,8 +17,36 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Componente que lee productos de un fichero JSON (UT3, componente de ficheros).
+ * <p>
+ * El fichero debe tener este formato:
+ * <pre>
+ * { "productos": [ { "codigo": "TEC-001", "nombre": "Teclado", "precio": 19.95,
+ *                    "stock": 12, "categoriaId": 1, "proveedorId": 1 }, ... ] }
+ * </pre>
+ * Valida cada producto con las mismas reglas que la importación de la UT1:
+ * código obligatorio de 1 a 12 caracteres (A-Z, 0-9 y guion, sin repetir en el fichero),
+ * nombre de 3 a 100 caracteres, precio mayor que 0, stock entero mayor o igual que 0
+ * y categoriaId y proveedorId enteros positivos.
+ * <p>
+ * El componente <b>no</b> usa la consola (ni {@code Scanner} ni {@code System.out}),
+ * <b>no</b> modifica el inventario y <b>no</b> guarda nada en MySQL: solo lee y devuelve
+ * el resultado. Quien lo usa decide qué hacer con los productos.
+ * <p>
+ * Ejemplo de uso:
+ * <pre>
+ * LectorProductosJson lector = new LectorProductosJson();
+ * ResultadoLecturaJson r = lector.leer(Path.of("datos/pruebas/json/tres_validos.json"));
+ * List&lt;Producto&gt; validos = r.getProductos();
+ * </pre>
+ */
 public class LectorProductosJson {
-     public LectorProductosJson() {
+
+    /**
+     * Crea un lector de productos JSON. No necesita ninguna configuración.
+     */
+    public LectorProductosJson() {
     }
 
     /**

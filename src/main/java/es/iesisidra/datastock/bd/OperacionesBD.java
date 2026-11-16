@@ -13,6 +13,7 @@ import es.iesisidra.datastock.modelo.Proveedor;
 import java.sql.Types;
 import java.sql.CallableStatement;
 
+import es.iesisidra.datastock.componentes.ConsultaProductoJdbc;
 import es.iesisidra.datastock.config.ConexionBD;
 import es.iesisidra.datastock.modelo.Categoria;
 import es.iesisidra.datastock.modelo.MovimientoStock;
@@ -230,19 +231,15 @@ public class OperacionesBD {
         ps.setInt(6, p.getProveedorId());
     }
 
-    // Devuelve el producto o null si no existe
+    // Devuelve el producto o null si no existe.
+    // UT3: la consulta por código está en el componente ConsultaProductoJdbc;
+    // este método solo lo reutiliza para que el resto de opciones (alta, modificar,
+    // movimientos...) sigan funcionando igual sin repetir el SQL.
     public static ProductoDetalle buscarProducto(String codigo) throws SQLException {
-        String sql = SELECT_PRODUCTO + "WHERE p.codigo = ?";
-        try (Connection con = ConexionBD.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, codigo);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return leerProducto(rs);
-                }
-                return null;
-            }
+        if (codigo == null || codigo.trim().isEmpty()) {
+            return null;
         }
+        return new ConsultaProductoJdbc().buscarPorCodigo(codigo).orElse(null);
     }
 
     public static void insertarProducto(Producto p) throws SQLException {
