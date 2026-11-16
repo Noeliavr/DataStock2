@@ -407,6 +407,7 @@ public class App {
         if (!incidencias.isEmpty()) {
             Colores.aviso("Incidencias:");
             for (String incidencia : incidencias) {
+
                 System.out.println("- " + incidencia);
             }
         }
